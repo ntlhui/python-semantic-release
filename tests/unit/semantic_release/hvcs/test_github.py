@@ -305,16 +305,10 @@ def test_compare_url(default_gh_client: Github):
 @pytest.mark.parametrize(
     "patched_os_environ, use_token, token, remote_url, expected_auth_url",
     [
+        # --- use_token=False always returns the configured URL unchanged ---
         (
             {"GITHUB_ACTOR": "foo"},
             False,
-            "",
-            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
-            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
-        ),
-        (
-            {"GITHUB_ACTOR": "foo"},
-            True,
             "",
             f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
             f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
@@ -327,24 +321,55 @@ def test_compare_url(default_gh_client: Github):
             f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
         ),
         (
+            {"GITHUB_ACTOR": "foo"},
+            False,
+            "aabbcc",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        # --- use_token=True but no token: return the configured URL unchanged ---
+        (
+            {"GITHUB_ACTOR": "foo"},
+            True,
+            "",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        # --- SSH remote + token: SSH URL must be preserved (deploy-key push) ---
+        (
             {},
             True,
             "aabbcc",
             f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        (
+            {"GITHUB_ACTOR": "foo"},
+            True,
+            "aabbcc",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        (
+            {},
+            True,
+            "aabbcc",
+            f"ssh://git@{Github.DEFAULT_DOMAIN}/custom/example.git",
+            f"ssh://git@{Github.DEFAULT_DOMAIN}/custom/example.git",
+        ),
+        # --- HTTPS remote + token: inject token credentials (existing behaviour) ---
+        (
+            {},
+            True,
+            "aabbcc",
+            f"https://{Github.DEFAULT_DOMAIN}/custom/example.git",
             f"https://aabbcc@{Github.DEFAULT_DOMAIN}/custom/example.git",
         ),
         (
             {"GITHUB_ACTOR": "foo"},
-            False,
-            "aabbcc",
-            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
-            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
-        ),
-        (
-            {"GITHUB_ACTOR": "foo"},
             True,
             "aabbcc",
-            f"git@{Github.DEFAULT_DOMAIN}:custom/example.git",
+            f"https://{Github.DEFAULT_DOMAIN}/custom/example.git",
             f"https://foo:aabbcc@{Github.DEFAULT_DOMAIN}/custom/example.git",
         ),
     ],
