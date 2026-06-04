@@ -1035,9 +1035,20 @@ variable when ``remote.domain`` is not specified.
 
 **Type:** ``bool``
 
-If set to ``true``, ignore the authentication token when pushing changes to the remote.
-This is ideal, for example, if you already have SSH keys set up which can be used for
-pushing.
+If set to ``true``, ignore the authentication token when pushing changes to the remote
+and use the configured :ref:`remote.url <config-remote-url>` (or the URL derived from
+:ref:`remote.name <config-remote-name>`) without injecting token credentials.
+
+.. note::
+   When :ref:`remote.url <config-remote-url>` (or the git remote resolved from
+   :ref:`remote.name <config-remote-name>`) already uses an SSH scheme (``git@…`` or
+   ``ssh://…``), PSR automatically preserves that URL for push operations even when a
+   token is set. Setting ``ignore_token_for_push = true`` is therefore **not required**
+   for SSH deploy-key setups.
+
+   ``ignore_token_for_push`` remains useful when the remote URL is HTTPS but you want
+   git to rewrite it to SSH via a ``url.<base>.insteadOf`` directive in your git
+   configuration, or when you need to suppress token injection for any other reason.
 
 **Default:** ``false``
 
@@ -1157,6 +1168,12 @@ from.
 
 This setting will override the upstream location url that would normally be derived
 from the :ref:`remote.name <config-remote-name>` location of your git repository.
+
+Both HTTPS (``https://…``) and SSH (``git@…`` or ``ssh://…``) URLs are supported.
+When an SSH URL is configured here (or derived from the git remote), PSR preserves
+it for push operations even when a token is present — the token is used only for
+API calls such as creating releases. No additional configuration is required to use
+SSH deploy keys alongside a provider token.
 
 **Default:** ``None``
 
