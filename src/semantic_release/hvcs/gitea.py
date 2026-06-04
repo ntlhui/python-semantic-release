@@ -18,7 +18,7 @@ from semantic_release.errors import (
     UnexpectedResponse,
 )
 from semantic_release.globals import logger
-from semantic_release.helpers import logged_function
+from semantic_release.helpers import logged_function, parse_git_url
 from semantic_release.hvcs.remote_hvcs_base import RemoteHvcsBase
 from semantic_release.hvcs.token_auth import TokenAuth
 from semantic_release.hvcs.util import build_requests_session, suppress_not_found
@@ -337,6 +337,12 @@ class Gitea(RemoteHvcsBase):
     def remote_url(self, use_token: bool = True) -> str:
         """Get the remote url including the token for authentication if requested"""
         if not (self.token and use_token):
+            return self._remote_url
+
+        # Honour the configured URL when it uses a non-HTTP/S scheme (e.g. SSH).
+        # The token is still available for API calls; it must not silently change
+        # the push transport away from the deploy key the user configured.
+        if parse_git_url(self._remote_url).scheme not in ("http", "https"):
             return self._remote_url
 
         return self.create_server_url(
