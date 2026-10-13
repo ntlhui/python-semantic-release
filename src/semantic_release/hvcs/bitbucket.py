@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from urllib3.util.url import Url, parse_url
 
 from semantic_release.globals import logger
+from semantic_release.helpers import parse_git_url
 from semantic_release.hvcs.remote_hvcs_base import RemoteHvcsBase
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -166,6 +167,12 @@ class Bitbucket(RemoteHvcsBase):
     def remote_url(self, use_token: bool = True) -> str:
         """Get the remote url including the token for authentication if requested"""
         if not use_token:
+            return self._remote_url
+
+        # Honour the configured URL when it uses a non-HTTP/S scheme (e.g. SSH).
+        # The token is still available for API calls; it must not silently change
+        # the push transport away from the deploy key the user configured.
+        if parse_git_url(self._remote_url).scheme not in ("http", "https"):
             return self._remote_url
 
         if not self.token:

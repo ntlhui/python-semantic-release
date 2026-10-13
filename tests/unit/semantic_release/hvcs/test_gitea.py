@@ -154,14 +154,9 @@ def test_gitea_get_repository_owner_and_name(default_gitea_client: Gitea):
 @pytest.mark.parametrize(
     "use_token, token, remote_url, expected_auth_url",
     [
+        # --- use_token=False always returns the configured URL unchanged ---
         (
             False,
-            "",
-            f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
-            f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
-        ),
-        (
-            True,
             "",
             f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
             f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
@@ -172,10 +167,31 @@ def test_gitea_get_repository_owner_and_name(default_gitea_client: Gitea):
             f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
             f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
         ),
+        # --- use_token=True but no token: return the configured URL unchanged ---
+        (
+            True,
+            "",
+            f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        # --- SSH remote + token: SSH URL must be preserved (deploy-key push) ---
         (
             True,
             "aabbcc",
             f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Gitea.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        (
+            True,
+            "aabbcc",
+            f"ssh://git@{Gitea.DEFAULT_DOMAIN}/custom/example.git",
+            f"ssh://git@{Gitea.DEFAULT_DOMAIN}/custom/example.git",
+        ),
+        # --- HTTPS remote + token: inject token credentials (existing behaviour) ---
+        (
+            True,
+            "aabbcc",
+            f"https://{Gitea.DEFAULT_DOMAIN}/custom/example.git",
             f"https://aabbcc@{Gitea.DEFAULT_DOMAIN}/custom/example.git",
         ),
     ],

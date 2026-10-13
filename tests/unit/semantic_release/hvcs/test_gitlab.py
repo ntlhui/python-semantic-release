@@ -198,14 +198,9 @@ def test_gitlab_get_repository_owner_and_name(
 @pytest.mark.parametrize(
     "use_token, token, remote_url, expected_auth_url",
     [
+        # --- use_token=False always returns the configured URL unchanged ---
         (
             False,
-            "",
-            f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
-            f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
-        ),
-        (
-            True,
             "",
             f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
             f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
@@ -216,10 +211,31 @@ def test_gitlab_get_repository_owner_and_name(
             f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
             f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
         ),
+        # --- use_token=True but no token: return the configured URL unchanged ---
+        (
+            True,
+            "",
+            f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        # --- SSH remote + token: SSH URL must be preserved (deploy-key push) ---
         (
             True,
             "aabbcc",
             f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Gitlab.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        (
+            True,
+            "aabbcc",
+            f"ssh://git@{Gitlab.DEFAULT_DOMAIN}/custom/example.git",
+            f"ssh://git@{Gitlab.DEFAULT_DOMAIN}/custom/example.git",
+        ),
+        # --- HTTPS remote + token: inject token credentials (existing behaviour) ---
+        (
+            True,
+            "aabbcc",
+            f"https://{Gitlab.DEFAULT_DOMAIN}/custom/example.git",
             f"https://gitlab-ci-token:aabbcc@{Gitlab.DEFAULT_DOMAIN}/custom/example.git",
         ),
     ],

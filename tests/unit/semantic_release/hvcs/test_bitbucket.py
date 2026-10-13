@@ -237,6 +237,7 @@ def test_compare_url(default_bitbucket_client: Bitbucket):
 @pytest.mark.parametrize(
     "patched_os_environ, use_token, token, remote_url, expected_auth_url",
     [
+        # --- use_token=False always returns the configured URL unchanged ---
         (
             {"BITBUCKET_USER": "foo"},
             False,
@@ -252,24 +253,55 @@ def test_compare_url(default_bitbucket_client: Bitbucket):
             f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
         ),
         (
-            {},
-            True,
-            "aabbcc",
-            f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
-            f"https://x-token-auth:aabbcc@{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
-        ),
-        (
             {"BITBUCKET_USER": "foo"},
             False,
             "aabbcc",
             f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
             f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
         ),
+        # --- SSH remote + token: SSH URL must be preserved (deploy-key push) ---
+        (
+            {},
+            True,
+            "aabbcc",
+            f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
+        ),
         (
             {"BITBUCKET_USER": "foo"},
             True,
             "aabbcc",
             f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        (
+            {},
+            True,
+            "aabbcc",
+            f"ssh://git@{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
+            f"ssh://git@{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
+        ),
+        # SSH URL with no token: SSH needs no token, so return SSH URL without raising
+        (
+            {},
+            True,
+            "",
+            f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
+            f"git@{Bitbucket.DEFAULT_DOMAIN}:custom/example.git",
+        ),
+        # --- HTTPS remote + token: inject token credentials (existing behaviour) ---
+        (
+            {},
+            True,
+            "aabbcc",
+            f"https://{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
+            f"https://x-token-auth:aabbcc@{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
+        ),
+        (
+            {"BITBUCKET_USER": "foo"},
+            True,
+            "aabbcc",
+            f"https://{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
             f"https://foo:aabbcc@{Bitbucket.DEFAULT_DOMAIN}/custom/example.git",
         ),
     ],
