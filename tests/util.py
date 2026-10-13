@@ -8,8 +8,9 @@ import stat
 import string
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from re import compile as regexp
+from re import compile as regexp, sub as regexp_sub
 from textwrap import indent
+from traceback import format_exception
 from typing import TYPE_CHECKING, Tuple
 
 from git import Git, Repo
@@ -51,7 +52,22 @@ if TYPE_CHECKING:
     GitCommandWrapperType: TypeAlias = Git
 
 
-def get_func_qual_name(func: Callable) -> str:
+_ANSI_ESCAPE_RE = regexp(r"\x1b\[[0-9;]*[A-Za-z]")
+_CONTROL_CHARS_RE = regexp(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def sanitize_output(text: str) -> str:
+    r"""
+    Strip ANSI escape sequences and non-printable control characters from text.
+
+    Preserves tab (``\t``), newline (``\n``), and carriage return (``\r``).
+    This prevents control characters from corrupting assertion messages and JUnit
+    XML reports.
+    """
+    return regexp_sub(_CONTROL_CHARS_RE, "", regexp_sub(_ANSI_ESCAPE_RE, "", text))
+
+
+def get_func_qual_name(func: Callable[[Any], Any]) -> str:
     return str.join(".", filter(None, [func.__module__, func.__qualname__]))
 
 
@@ -61,15 +77,31 @@ def assert_exit_code(
     if result.exit_code == exit_code:
         return True
 
+    stdout = sanitize_output(result.output or "")
+    stderr = sanitize_output(getattr(result, "stderr", "") or "")
+    exc_info = result.exc_info
+    exc_lines = (
+        format_exception(exc_info[0], exc_info[1], exc_info[2]) if exc_info else []
+    )
+    exc_text = sanitize_output(str.join("", exc_lines))
+
     raise AssertionError(
         str.join(
             os.linesep,
             [
                 f"{result.exit_code} != {exit_code} (actual != expected)",
                 "",
-                # Explain what command failed
                 "Unexpected exit code from command:",
                 indent(f"'{str.join(' ', cli_cmd)}'", " " * 2),
+                "",
+                "Captured stdout:",
+                indent(stdout or "(empty)", " " * 2),
+                "",
+                "Captured stderr:",
+                indent(stderr or "(empty)", " " * 2),
+                "",
+                "Exception:",
+                indent(exc_text or "(none)", " " * 2),
             ],
         )
     )
@@ -79,7 +111,30 @@ def assert_successful_exit_code(result: ClickInvokeResult, cli_cmd: list[str]) -
     return assert_exit_code(SUCCESS_EXIT_CODE, result, cli_cmd)
 
 
-def get_full_qualname(callable_obj: Callable) -> str:
+def assert_str_not_in_output(substring: str, output: str) -> bool:
+    found_lines: list[str] = list(
+        filter(
+            lambda line, substr=substring: substr in line,  # type: ignore[arg-type]
+            output.splitlines(),
+        )
+    )
+    num_found_lines = len(found_lines)
+
+    if num_found_lines == 0:
+        return True
+
+    raise AssertionError(
+        str.join(
+            os.linesep,
+            [
+                f"Found {num_found_lines} lines in output containing {substring!r}:",
+                indent(str.join(os.linesep, found_lines), " " * 2),
+            ],
+        )
+    )
+
+
+def get_full_qualname(callable_obj: Callable[[Any], Any]) -> str:
     parts = filter(
         None,
         [
@@ -102,6 +157,14 @@ def copy_dir_tree(src_dir: Path | str, dst_dir: Path | str) -> None:
         src=str(src_dir),
         dst=str(dst_dir),
         dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns(
+            # Ignore temporary and lock files from git
+            "tmp_pack_*",
+            "tmp_obj_*",
+            "tmp_idx_*",
+            "*.lock",
+            "gc.pid",
+        ),
     )
 
 

@@ -90,7 +90,7 @@ jobs:
 
     steps:
       - name: Setup | Checkout Repository at workflow sha
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -100,7 +100,7 @@ jobs:
           git checkout -B ${{ github.ref_name }}
 
       - name: Setup | Install Python ${{ env.COMMON_PYTHON_VERSION }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ env.COMMON_PYTHON_VERSION }}
           cache: 'pip'
@@ -112,7 +112,7 @@ jobs:
 
       - name: Build | Build next version artifacts
         id: version
-        uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0  # v10.5.3
+        uses: python-semantic-release/python-semantic-release@b700dbeb1f431a0fcc30a79f3f0869407fe07278  # v10.7.0
         with:
           github_token: ""
           verbosity: 1
@@ -139,7 +139,7 @@ jobs:
           printf '%s\n' "artifacts_name=dist" >> $GITHUB_OUTPUT
 
       - name: Upload | Distribution Artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.build.outputs.artifacts_name }}
           path: ${{ steps.build.outputs.dist_dir }}
@@ -161,13 +161,13 @@ jobs:
 
     steps:
       - name: Setup | Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
 
       - name: Setup | Install Python ${{ env.LOWEST_PYTHON_VERSION }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ env.LOWEST_PYTHON_VERSION }}
           cache: 'pip'
@@ -195,7 +195,7 @@ jobs:
             --junit-xml=tests/reports/pytest-results.xml
 
       - name: Report | Upload Test Results
-        uses: mikepenz/action-junit-report@e08919a3b1fb83a78393dfb775a9c37f17d8eea6  # v6.0.1
+        uses: mikepenz/action-junit-report@a9170d5795813c01ab4901ffb045b52bab4ab09d  # v6.5.0
         if: ${{ always() && steps.tests.outcome != 'skipped' }}
         with:
           report_paths: ./tests/reports/*.xml
@@ -217,19 +217,19 @@ jobs:
 
     steps:
       - name: Setup | Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
 
       - name: Setup | Install Python ${{ matrix.python-version }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       - name: Setup | Download Distribution Artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: ${{ needs.build.outputs.distribution-artifacts }}
           path: ./dist
@@ -265,7 +265,7 @@ jobs:
             --junit-xml=tests/reports/pytest-results.xml
 
       - name: Report | Upload Cached Repos on Failure
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: ${{ failure() && steps.tests.outcome == 'failure' }}
         with:
           name: ${{ format('cached-repos-{0}-{1}', matrix.os, matrix.python-version) }}
@@ -275,7 +275,7 @@ jobs:
           retention-days: 1
 
       - name: Report | Upload Tested Repos on Failure
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: ${{ failure() && steps.tests.outcome == 'failure' }}
         with:
           name: ${{ format('tested-repos-{0}-{1}', matrix.os, matrix.python-version) }}
@@ -285,7 +285,7 @@ jobs:
           retention-days: 1
 
       - name: Report | Upload Test Results
-        uses: mikepenz/action-junit-report@e08919a3b1fb83a78393dfb775a9c37f17d8eea6  # v6.0.1
+        uses: mikepenz/action-junit-report@a9170d5795813c01ab4901ffb045b52bab4ab09d  # v6.5.0
         if: ${{ always() && steps.tests.outcome != 'skipped' }}
         with:
           report_paths: ./tests/reports/*.xml
@@ -306,19 +306,19 @@ jobs:
 
     steps:
       - name: Setup | Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
 
       - name: Setup | Install Python ${{ matrix.python-version }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
       - name: Setup | Download Distribution Artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: ${{ needs.build.outputs.distribution-artifacts }}
           path: dist
@@ -341,6 +341,28 @@ jobs:
           python -c 'import pathlib, semantic_release; print(f"PKG_INSTALLED_DIR={pathlib.Path(semantic_release.__file__).resolve().parent}")' | Tee-Object -Variable cmdOutput
           echo $cmdOutput >> $env:GITHUB_OUTPUT
 
+      - name: Setup | Harden Windows runner for git-heavy tests
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # 1. Exclude workspace & temp dirs from Defender real-time scanning
+          Add-MpPreference -ExclusionPath "${{ github.workspace }}"
+          Add-MpPreference -ExclusionPath "$env:TEMP"
+          Add-MpPreference -ExclusionProcess "git.exe"
+          Add-MpPreference -ExclusionProcess "python.exe"
+
+          # 2. Move temp (pytest tmp_path factory) to the faster D: drive
+          New-Item -ItemType Directory -Force -Path "D:\tmp" | Out-Null
+          "TEMP=D:\tmp" >> $env:GITHUB_ENV
+          "TMP=D:\tmp"  >> $env:GITHUB_ENV
+
+          # 3. Disable git background features that race with rapid repo churn
+          git config --global core.fsmonitor false
+          git config --global core.untrackedCache false
+          git config --global gc.auto 0
+          git config --global maintenance.auto false
+          git config --global core.longpaths true
+
       - name: Test | Run pytest -m e2e
         id: tests
         shell: pwsh
@@ -349,13 +371,13 @@ jobs:
           # Required for GitPython to work on Windows because of getpass.getuser()
           # USERNAME: "runneradmin"
           # COLUMNS: 150
-          # Because GHA is currently broken on Windows to pass these varables, we do it manually
+          # Because GHA is currently broken on Windows to pass these variables, we do it manually
         run: |
           $env:USERNAME = "runneradmin"
           $env:COLUMNS = 150
           pytest                                                    `
             -vv                                                     `
-            -nauto                                                  `
+            -n 2                                                    `
             -m e2e                                                  `
             `--cov=${{ steps.install.outputs.PKG_INSTALLED_DIR }}   `
             `--cov-context=test                                     `
@@ -363,7 +385,7 @@ jobs:
             `--junit-xml=tests/reports/pytest-results.xml
 
       - name: Report | Upload Cached Repos on Failure
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: ${{ failure() && steps.tests.outcome == 'failure' }}
         with:
           name: ${{ format('cached-repos-{0}-{1}', matrix.os, matrix.python-version) }}
@@ -373,17 +395,17 @@ jobs:
           retention-days: 1
 
       - name: Report | Upload Tested Repos on Failure
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: ${{ failure() && steps.tests.outcome == 'failure' }}
         with:
           name: ${{ format('tested-repos-{0}-{1}', matrix.os, matrix.python-version) }}
-          path: ~/AppData/Local/Temp/pytest-of-runneradmin/pytest-current/*
+          path: D:\tmp\pytest-of-runneradmin\pytest-current\*
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
 
       - name: Report | Upload Test Results
-        uses: mikepenz/action-junit-report@e08919a3b1fb83a78393dfb775a9c37f17d8eea6  # v6.0.1
+        uses: mikepenz/action-junit-report@a9170d5795813c01ab4901ffb045b52bab4ab09d  # v6.5.0
         if: ${{ always() && steps.tests.outcome != 'skipped' }}
         with:
           report_paths: ./tests/reports/*.xml
@@ -404,13 +426,13 @@ jobs:
 
     steps:
       - name: Setup | Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 1
           ref: ${{ github.sha }}
 
       - name: Setup | Download Distribution Artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: ${{ needs.build.outputs.distribution-artifacts }}
           path: ${{ env.ACTION_SRC_DIR }}
@@ -427,7 +449,7 @@ jobs:
 
       - name: Build | Action Container
         id: container-builder
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83  # v6.18.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         with:
           context: ${{ env.ACTION_SRC_DIR }}
           load: true # add to `docker images`
@@ -446,15 +468,15 @@ jobs:
 
     steps:
       - name: Setup | Checkout Repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
 
-      - name: Setup | Install Python ${{ env.COMMON_PYTHON_VERSION }}
-        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
+      - name: Setup | Install Python ${{ env.LOWEST_PYTHON_VERSION }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
-          python-version: ${{ env.COMMON_PYTHON_VERSION }}
+          python-version: ${{ env.LOWEST_PYTHON_VERSION }}
           cache: 'pip'
 
       - name: Setup | Install dependencies

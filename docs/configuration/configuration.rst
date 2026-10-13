@@ -120,6 +120,52 @@ sure to use the correct root key depending on the configuration format you are u
 
 ----
 
+.. _config-add_partial_tags:
+
+``add_partial_tags``
+""""""""""""""""""""
+
+**Type:** ``bool``
+
+Specify if partial version tags should be handled when creating a new version. If set to
+``true``, a ``major`` and a ``major.minor`` tag will be created or updated, using the format
+specified in :ref:`tag_format`. If version has build metadata, a ``major.minor.patch`` tag
+will also be created or updated.
+
+Partial version tags are **disabled** for pre-release versions.
+
+**Example**
+
+.. code-block:: toml
+
+    [semantic_release]
+    tag_format = "v{version}"
+    add_partial_tags = true
+
+This configuration with the next version of ``1.2.3`` will result in:
+
+.. code-block:: bash
+
+    git log --decorate --oneline --graph --all
+    # * 4d4cb0a (tag: v1.2.3, tag: v1.2, tag: v1, origin/main, main) 1.2.3
+    # * 3a2b1c0 fix: some bug
+    # * 2b1c0a9 (tag: v1.2.2) 1.2.2
+    # ...
+
+If build-metadata is used, the next version of ``1.2.3+20251109`` will result in:
+
+.. code-block:: bash
+
+    git log --decorate --oneline --graph --all
+    # * 4d4cb0a (tag: v1.2.3+20251109, tag: v1.2.3, tag: v1.2, tag: v1, origin/main, main) 1.2.3+20251109
+    # * 3a2b1c0 chore: add partial tags to PSR configuration
+    # * 2b1c0a9 (tag: v1.2.3+20251031) 1.2.3+20251031
+    # ...
+
+**Default:** ``false``
+
+----
+
 .. _config-allow_zero_version:
 
 ``allow_zero_version``
@@ -1179,47 +1225,40 @@ SSH deploy keys alongside a provider token.
 
 ----
 
-.. _config-add_partial_tags:
+.. _config-repo_dir:
 
-``add_partial_tags``
-""""""""""""""""""""
+``repo_dir``
+""""""""""""
+
+**Type:** ``str``
+
+Specify the directory of the Git repository. This is used to determine the location of
+the repository for various operations, such as creating tags and commits. PSR will attempt
+to automatically determine the location of the repository in parent directories of the
+current working directory but will emit a warning if it is higher than this defined value.
+
+If a git repository is not found from this location or any parent directories, PSR will
+raise an error and exit.
+
+**Default:** ``"."``
+
+----
+
+.. _config-signoff_commit:
+
+``signoff_commit``
+"""""""""""""""""""
 
 **Type:** ``bool``
 
-Specify if partial version tags should be handled when creating a new version. If set to
-``true``, a ``major`` and a ``major.minor`` tag will be created or updated, using the format
-specified in :ref:`tag_format`. If version has build metadata, a ``major.minor.patch`` tag
-will also be created or updated.
+When true, Python Semantic Release will add a ``Signed-off-by`` trailer to the version
+commit it creates during :ref:`cmd-version`, using the configured :ref:`config-commit_author`
+name and email. This is equivalent to running ``git commit --signoff`` and is commonly used
+to comply with a `Developer Certificate of Origin`_ (DCO) requirement.
 
-Partial version tags are **disabled** for pre-release versions.
+.. _Developer Certificate of Origin: https://developercertificate.org/
 
-**Example**
-
-.. code-block:: toml
-
-    [semantic_release]
-    tag_format = "v{version}"
-    add_partial_tags = true
-
-This configuration with the next version of ``1.2.3`` will result in:
-
-.. code-block:: bash
-
-    git log --decorate --oneline --graph --all
-    # * 4d4cb0a (tag: v1.2.3, tag: v1.2, tag: v1, origin/main, main) 1.2.3
-    # * 3a2b1c0 fix: some bug
-    # * 2b1c0a9 (tag: v1.2.2) 1.2.2
-    # ...
-
-If build-metadata is used, the next version of ``1.2.3+20251109`` will result in:
-
-.. code-block:: bash
-
-    git log --decorate --oneline --graph --all
-    # * 4d4cb0a (tag: v1.2.3+20251109, tag: v1.2.3, tag: v1.2, tag: v1, origin/main, main) 1.2.3+20251109
-    # * 3a2b1c0 chore: add partial tags to PSR configuration
-    # * 2b1c0a9 (tag: v1.2.3+20251031) 1.2.3+20251031
-    # ...
+This option has no effect when the ``--no-commit`` option is passed.
 
 **Default:** ``false``
 
@@ -1343,7 +1382,7 @@ colon-separated definition with either 2 or 3 parts. The 2-part definition inclu
 the file path and the variable name. Newly with v9.20.0, it also accepts
 an optional 3rd part to allow configuration of the format type.
 
-As of ${NEW_RELEASE_TAG}, the ``version_variables`` option also supports entire file
+As of v10.6.0, the ``version_variables`` option also supports entire file
 replacement by using an asterisk (``*``) as the pattern/variable name. This is useful
 for files that contain only a version number, such as ``VERSION`` files.
 
@@ -1375,7 +1414,8 @@ version numbers.
     ]
 
 First, the ``__version__`` variable in ``src/semantic_release/__init__.py`` will be updated
-with the next version using the `SemVer`_ number format.
+with the next version using the `SemVer`_ number format. As of v10.7.0, this works
+both with and without a Python type annotation on the variable:
 
 .. code-block:: diff
 
@@ -1383,6 +1423,10 @@ with the next version using the `SemVer`_ number format.
 
     - __version__ = "0.1.0"
     + __version__ = "0.2.0"
+
+    # or with a type annotation (v10.7.0 or greater):
+    - __version__: str = "0.1.0"
+    + __version__: str = "0.2.0"
 
 Then, the ``version`` variable in ``docs/conf.py`` will be updated with the next version
 with the next version using the `SemVer`_ number format because of the explicit ``nf``.
@@ -1448,6 +1492,9 @@ The regular expression generated from the ``version_variables`` definition will:
    the symbol. As of v10.0.0, a double-equals (``==``) operator is also supported
    as a valid operand symbol. As of v10.5.0, PSR can omit all operands as long
    as there is at least one whitespace character between the variable name and the version.
+   As of v10.7.0, an optional Python-style type annotation (e.g. ``: str``,
+   ``: typing.Final[str]``) between the variable name and the assignment operator is
+   also supported.
 
 3. The value of the variable must match a `SemVer`_ regular expression and can be
    enclosed by single (``'``) or double (``"``) quotation marks but they must match. However,

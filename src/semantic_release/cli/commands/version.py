@@ -481,6 +481,7 @@ def version(  # noqa: C901
     commit_message = runtime.commit_message
     major_on_zero = runtime.major_on_zero
     no_verify = runtime.no_git_verify
+    signoff_commit = runtime.signoff_commit
     opts = runtime.global_cli_options
     add_partial_tags = config.add_partial_tags
     gha_output = VersionGitHubActionsOutput(
@@ -591,19 +592,14 @@ def version(  # noqa: C901
     # If the new version has already been released, we fail and abort if strict;
     # otherwise we exit with 0.
     if new_version in previously_released_versions:
-        err_msg = str.join(
-            " ",
-            [
-                "[bold orange1]No release will be made,",
-                f"{new_version!s} has already been released!",
-            ],
-        )
+        err_msg = f"No release will be made, {new_version!s} has already been released!"
+        orange1_code = 214  # https://rich.readthedocs.io/en/stable/appendix/colors.html
 
         if opts.strict:
-            click.echo(err_msg, err=True)
+            click.secho(err_msg, err=True, fg=orange1_code, bold=True)
             ctx.exit(2)
 
-        rprint(err_msg)
+        click.secho(err_msg, err=True, fg=orange1_code, bold=True)
         return
 
     if print_only or print_only_tag:
@@ -718,6 +714,7 @@ def version(  # noqa: C901
                 message=commit_message.format(version=new_version),
                 date=int(commit_date.timestamp()),
                 no_verify=no_verify,
+                signoff=signoff_commit,
                 noop=opts.noop,
             )
         except GitCommitEmptyIndexError:

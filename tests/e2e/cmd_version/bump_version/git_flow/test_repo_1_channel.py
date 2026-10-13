@@ -10,7 +10,7 @@ from tests.fixtures.repos.git_flow import (
     repo_w_git_flow_emoji_commits,
     repo_w_git_flow_scipy_commits,
 )
-from tests.util import temporary_working_directory
+from tests.util import assert_str_not_in_output, temporary_working_directory
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -66,6 +66,7 @@ def test_gitflow_repo_rebuild_1_channel(
     pyproject_toml_file: Path,
     changelog_md_file: Path,
     changelog_rst_file: Path,
+    caplog: pytest.LogCaptureFixture,
 ):
     # build target repo into a temporary directory
     target_repo_dir = example_project_dir / repo_fixture_name
@@ -153,6 +154,8 @@ def test_gitflow_repo_rebuild_1_channel(
 
         # Evaluate (normal release actions should have occurred as expected)
         # ------------------------------------------------------------------
+        # The warning should not be present in the logs since we are running in the same directory as the .git repo
+        assert_str_not_in_output("Found .git/ in higher parent directory", caplog.text)
         # Make sure version file is updated
         assert expected_pyproject_toml_content == actual_pyproject_toml_content
         assert expected_version_file_content == actual_version_file_content
@@ -163,8 +166,7 @@ def test_gitflow_repo_rebuild_1_channel(
         assert expected_release_commit_text == actual_release_commit_text
         # Make sure tag is created
         assert curr_release_tag in [tag.name for tag in mirror_git_repo.tags]
-        assert (
-            mocked_git_fetch.call_count == 1
-        )  # fetch called to check for remote changes
+        # fetch called to check for remote changes
+        assert mocked_git_fetch.call_count == 1
         assert mocked_git_push.call_count == 2  # 1 for commit, 1 for tag
         assert post_mocker.call_count == 1  # vcs release creation occurred

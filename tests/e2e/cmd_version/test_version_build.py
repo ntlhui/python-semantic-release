@@ -10,7 +10,7 @@ from unittest import mock
 import pytest
 import shellingham
 import tomlkit
-from flatdict import FlatDict
+from cj365.flatdict import FlatDict
 from pytest_lazy_fixtures.lazy_fixture import lf as lazy_fixture
 
 from tests.const import MAIN_PROG_NAME, VERSION_SUBCMD
@@ -26,27 +26,29 @@ if TYPE_CHECKING:
 @pytest.mark.skipif(sys.platform == "win32", reason="Unix only")
 @pytest.mark.parametrize(
     "shell",
-    filter(
-        None,
-        [
-            # because we will actually run the build command in this shell, we must ensure it exists
-            "bash"
-            if list(
-                filter(
-                    lambda sh_exe: Path(sh_exe).exists(),
-                    ("/bin/bash", "/usr/bin/bash", "/usr/local/bin/bash"),
+    list(
+        filter(
+            None,
+            [
+                # because we will actually run the build command in this shell, we must ensure it exists
+                "bash"
+                if list(
+                    filter(
+                        lambda sh_exe: Path(sh_exe).exists(),
+                        ("/bin/bash", "/usr/bin/bash", "/usr/local/bin/bash"),
+                    )
                 )
-            )
-            else "",
-            "zsh"
-            if list(
-                filter(
-                    lambda sh_exe: Path(sh_exe).exists(),
-                    ("/bin/zsh", "/usr/bin/zsh", "/usr/local/bin/zsh"),
+                else "",
+                "zsh"
+                if list(
+                    filter(
+                        lambda sh_exe: Path(sh_exe).exists(),
+                        ("/bin/zsh", "/usr/bin/zsh", "/usr/local/bin/zsh"),
+                    )
                 )
-            )
-            else "",
-        ],
+                else "",
+            ],
+        )
     )
     or ["sh"],
 )
@@ -126,9 +128,8 @@ def test_version_runs_build_command(
         )
 
         assert built_wheel_file.exists()
-        assert (
-            mocked_git_fetch.call_count == 1
-        )  # fetch called to check for remote changes
+        # fetch called to check for remote changes
+        assert mocked_git_fetch.call_count == 1
         assert mocked_git_push.call_count == 2
         assert post_mocker.call_count == 1
 
@@ -228,9 +229,8 @@ def test_version_runs_build_command_windows(
 
         dist_file_exists = built_wheel_file.exists()
         assert dist_file_exists, f"\n  Expected wheel file to be created at {built_wheel_file}, but it does not exist."
-        assert (
-            mocked_git_fetch.call_count == 1
-        )  # fetch called to check for remote changes
+        # fetch called to check for remote changes
+        assert mocked_git_fetch.call_count == 1
         assert mocked_git_push.call_count == 2
         assert post_mocker.call_count == 1
 

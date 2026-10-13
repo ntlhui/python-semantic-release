@@ -9,8 +9,11 @@ from unittest import mock
 import pytest
 import tomlkit
 
-# NOTE: use backport with newer API
-from importlib_resources import files
+try:
+    from importlib.resources import files  # type: ignore[attr-defined]
+except ImportError:
+    # NOTE: for 3.8, use backport with newer API than stdlib
+    from importlib_resources import files
 
 import semantic_release
 from semantic_release.cli.config import (
@@ -367,9 +370,14 @@ def get_parser_from_config_file(
     def _get_parser_from_config(
         file: Path | str = pyproject_toml_file,
     ) -> CommitParser[ParseResult, ParserOptions]:
-        return load_runtime_context(
-            cli_opts=GlobalCommandLineOptions(config_file=str(Path(file)))
-        ).commit_parser
+        file_path = Path(file).resolve()
+
+        # Use a temporary working directory to ensure that the current working directory
+        # does not affect the loading of the runtime context and commit parser.
+        with temporary_working_directory(file_path.parent):
+            return load_runtime_context(
+                cli_opts=GlobalCommandLineOptions(config_file=str(file_path))
+            ).commit_parser
 
     return _get_parser_from_config
 
